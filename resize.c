@@ -15,15 +15,23 @@
 int main(int argc, char* argv[])
 {
     // ensure proper usage
-    if (argc != 3)
+    if (argc != 4)
     {
-        printf("Usage: ./copy infile outfile\n");
+        printf("Usage: ./resize n infile outfile\n");
         return 1;
     }
 
     // remember filenames
-    char* infile = argv[1];
-    char* outfile = argv[2];
+    char* infile = argv[2];
+    char* outfile = argv[3];
+    
+    //check n for positive int from 1 to 100
+    int n = atoi(argv[1]);
+    if (n < 1 || n > 100)
+    {   
+        printf("n value must be between 1 and 100\n");
+        return 1;
+    }   
 
     // open input file 
     FILE* inptr = fopen(infile, "r");
@@ -59,16 +67,30 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Unsupported file format.\n");
         return 4;
     }
+    
+     // TODO resize biWidth of image
+    bi.biWidth *=  n;
+    
+    // resize biHeight in pixels
+    bi.biHeight *= n; 
+    
+ /*_./resize 4 small.bmp student.bmp
+~cs50/pset5/resize 4 small.bmp staff.bmp
+~cs50/pset5/peek student.bmp staff.bmp
 
     // write outfile's BITMAPFILEHEADER
     fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
 
     // write outfile's BITMAPINFOHEADER
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
-
+ ______________________________________________________________________________________________________________*/      
+   
     // determine padding for scanlines
-    int padding =  (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
-
+    int padding = (4 - ((bi.biWidth) * sizeof(RGBTRIPLE)) % 4) % 4;
+    
+    // TODO resize the total size of image + padding
+    bi.biSizeImage = bi.biHeight * (bi.biWidth + padding);
+/*_____________________________________________________________________________________________________*/    
     // iterate over infile's scanlines
     for (int i = 0, biHeight = abs(bi.biHeight); i < biHeight; i++)
     {
@@ -82,7 +104,10 @@ int main(int argc, char* argv[])
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
             // write RGB triple to outfile
-            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+            for (int l = 0; l < n; l++)
+            {
+                fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+            }
         }
 
         // skip over padding, if any
@@ -102,5 +127,6 @@ int main(int argc, char* argv[])
     fclose(outptr);
 
     // that's all folks
+    
     return 0;
 }
