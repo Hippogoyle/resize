@@ -1,5 +1,5 @@
 /**
- * copy.c
+ * by Jerry Johnson
  *
  * Computer Science 50
  * Problem Set 5
@@ -68,34 +68,39 @@ int main(int argc, char* argv[])
         return 4;
     }
     
-     // TODO resize biWidth of image
-    bi.biWidth *=  n;
+     // save input struct values
+    int inputWidth = bi.biWidth;
+    int inputHeight = bi.biHeight;
     
-    // resize biHeight in pixels
-    bi.biHeight *= n; 
+  //  int inputISize = bi.biSizeImage;
     
- /*_./resize 4 small.bmp student.bmp
-~cs50/pset5/resize 4 small.bmp staff.bmp
-~cs50/pset5/peek student.bmp staff.bmp
-
+    // resize  biWidth and biHeight in pixels
+    bi.biWidth *= n;
+    bi.biHeight *= n;
+    
+    // determine padding for scanlines
+    int inputpadding  = (4 - ((inputWidth) * sizeof(RGBTRIPLE)) % 4) % 4;
+    int padding = (4 - ((bi.biWidth) * sizeof(RGBTRIPLE)) % 4) % 4;
+    
+    //char* scanline [bi.biWidth * 3 + padding];
+    // resize the total size of image + padding
+    bi.biSizeImage = abs(bi.biHeight) * ((bi.biWidth * 3) + padding);
+    
+    bf.bfSize = (54 + bi.biSizeImage);
+    
     // write outfile's BITMAPFILEHEADER
     fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
 
     // write outfile's BITMAPINFOHEADER
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
- ______________________________________________________________________________________________________________*/      
-   
-    // determine padding for scanlines
-    int padding = (4 - ((bi.biWidth) * sizeof(RGBTRIPLE)) % 4) % 4;
-    
-    // TODO resize the total size of image + padding
-    bi.biSizeImage = bi.biHeight * (bi.biWidth + padding);
-/*_____________________________________________________________________________________________________*/    
+ 
     // iterate over infile's scanlines
-    for (int i = 0, biHeight = abs(bi.biHeight); i < biHeight; i++)
-    {
-        // iterate over pixels in scanline
-        for (int j = 0; j < bi.biWidth; j++)
+    RGBTRIPLE* buffer = malloc(sizeof(RGBTRIPLE) * bi.biWidth);
+    for (int i = 0; i < abs(inputHeight); i++)
+    {   
+    // iterate over pixels in scanline
+        int g = 0;
+        for (int j = 0; j < inputWidth; j++)
         {
             // temporary storage
             RGBTRIPLE triple;
@@ -104,19 +109,24 @@ int main(int argc, char* argv[])
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
             // write RGB triple to outfile
-            for (int l = 0; l < n; l++)
+            for (int m = 0; m < n; m++, g++)
             {
-                fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+                buffer[g] = triple;  
             }
         }
 
         // skip over padding, if any
-        fseek(inptr, padding, SEEK_CUR);
+        fseek(inptr, inputpadding, SEEK_CUR);
+        
+        for(int size =0; size < n; size++)
+        {
+            fwrite(buffer, sizeof(RGBTRIPLE), bi.biWidth, outptr);
+        }
 
         // then add it back (to demonstrate how)
         for (int k = 0; k < padding; k++)
         {
-            fputc(0x00, outptr);
+            fputc(0x00, outptr);   
         }
     }
 
@@ -125,6 +135,8 @@ int main(int argc, char* argv[])
 
     // close outfile
     fclose(outptr);
+    
+    free(buffer);
 
     // that's all folks
     
